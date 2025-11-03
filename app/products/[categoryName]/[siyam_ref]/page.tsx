@@ -57,7 +57,7 @@ async function getProduct(categoryName: string, siyamRef: string) {
     query.category = { $regex: new RegExp(`^${category.dbName}$`, "i") };
     query.siyam_ref = siyamRef;
 
-    const product = await Part.findOne(query).lean();
+    const product = await Part.findOne(query).lean() as (IPart & { _id: any; __v?: number }) | null;
 
     if (!product) {
       return null;
@@ -65,7 +65,7 @@ async function getProduct(categoryName: string, siyamRef: string) {
 
     return {
       ...product,
-      _id: (product as any)._id?.toString() || "",
+      _id: product._id?.toString() || "",
     } as IPart & { _id: string };
   } catch (error) {
     console.error("Error fetching product:", error);

@@ -163,7 +163,7 @@ export default async function SearchPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product: IPart) => (
+              {products.map((product: IPart & { _id: string }) => (
                 <ProductCard key={product.siyam_ref || product._id?.toString()} product={product} />
               ))}
             </div>

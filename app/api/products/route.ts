@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/ConnectDB";
-import { Part } from "@/models/part";
+import { Part, IPart } from "@/models/part";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,14 +29,14 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const products = await Part.find(query).sort({ siyam_ref: 1 }).lean();
-
+    const products = await Part.find(query).sort({ siyam_ref: 1 }).lean() as (IPart & { _id: any; __v?: number })[];
+    
     return NextResponse.json({
       success: true,
       products: products.map((product) => ({
         ...product,
         _id: product._id?.toString(),
-      })),
+      })) as (IPart & { _id: string })[],
       count: products.length,
     });
   } catch (error) {

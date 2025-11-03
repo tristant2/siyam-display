@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, FormEvent, useEffect, useRef } from "react";
+import { ReactNode, useState, FormEvent, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
@@ -10,8 +10,8 @@ interface NavLayoutProps {
   children: ReactNode;
 }
 
-export default function NavLayout({ children }: NavLayoutProps) {
-  const pathname = usePathname();
+// Search component that uses useSearchParams - must be wrapped in Suspense
+function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,8 +20,7 @@ export default function NavLayout({ children }: NavLayoutProps) {
   const [isLoading, setIsLoading] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const isProducts = pathname === "/";
-  const isContact = pathname === "/contact";
+  const pathname = usePathname();
   const isSearch = pathname === "/search";
 
   // Sync search query with URL parameter
@@ -115,6 +114,67 @@ export default function NavLayout({ children }: NavLayoutProps) {
   };
 
   return (
+    <form onSubmit={handleSearch} className="flex justify-center">
+      <div className="relative w-full max-w-md" ref={suggestionsRef}>
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => {
+            if (suggestions.length > 0) {
+              setShowSuggestions(true);
+            }
+          }}
+          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          placeholder="Search products..."
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+            {suggestions.map((product) => (
+              <button
+                key={product._id || product.siyam_ref}
+                type="button"
+                onClick={() => handleSuggestionClick(product)}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {product.siyam_ref}
+                    </p>
+                    {(product.model || product.make) && (
+                      <p className="text-sm text-gray-500 truncate">
+                        {product.make} {product.model}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        {isLoading && searchQuery.trim() && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg px-4 py-2 text-sm text-gray-500">
+            Searching...
+          </div>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function NavLayout({ children }: NavLayoutProps) {
+  const pathname = usePathname();
+  const isProducts = pathname === "/";
+  const isContact = pathname === "/contact";
+
+  return (
     <>
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -143,58 +203,23 @@ export default function NavLayout({ children }: NavLayoutProps) {
                 </Link>
               </div>
             </div>
-            <form onSubmit={handleSearch} className="flex justify-center">
-              <div className="relative w-full max-w-md" ref={suggestionsRef}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            <Suspense fallback={
+              <form className="flex justify-center">
+                <div className="relative w-full max-w-md">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                  </div>
+                  <input
+                    type="text"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    placeholder="Search products..."
+                    disabled
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSuggestions(true);
-                  }}
-                  onFocus={() => {
-                    if (suggestions.length > 0) {
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="Search products..."
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                    {suggestions.map((product) => (
-                      <button
-                        key={product._id || product.siyam_ref}
-                        type="button"
-                        onClick={() => handleSuggestionClick(product)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {product.siyam_ref}
-                            </p>
-                            {(product.model || product.make) && (
-                              <p className="text-sm text-gray-500 truncate">
-                                {product.make} {product.model}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {isLoading && searchQuery.trim() && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg px-4 py-2 text-sm text-gray-500">
-                    Searching...
-                  </div>
-                )}
-              </div>
-            </form>
+              </form>
+            }>
+              <SearchBar />
+            </Suspense>
           </div>
         </div>
       </nav>
@@ -202,4 +227,6 @@ export default function NavLayout({ children }: NavLayoutProps) {
     </>
   );
 }
+
+export default NavLayout;
 

@@ -27,8 +27,8 @@ async function getProducts(categoryName: string) {
     const query: { category?: { $regex: RegExp } } = {};
     query.category = { $regex: new RegExp(`^${category.dbName}$`, "i") };
 
-    const products = await Part.find(query).sort({ siyam_ref: 1 }).lean();
-
+    const products = await Part.find(query).sort({ siyam_ref: 1 }).lean() as (IPart & { _id: any; __v?: number })[];
+    
     return {
       products: products.map((product) => ({
         ...product,
@@ -171,7 +171,7 @@ export default async function CategoryPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product: IPart) => (
+              {products.map((product: IPart & { _id: string }) => (
                 <ProductCard key={product.siyam_ref || product._id?.toString()} product={product} category={categoryName} />
               ))}
             </div>
