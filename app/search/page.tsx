@@ -4,6 +4,8 @@ import { HomeIcon } from "@heroicons/react/20/solid";
 import ProductCard from "@/components/ProductCard";
 import { IPart } from "@/models/part";
 import type { Metadata } from "next";
+import connectDB from "@/lib/ConnectDB";
+import { Part } from "@/models/part";
 
 async function getSearchResults(searchQuery: string) {
   if (!searchQuery || searchQuery.trim() === "") {
@@ -11,29 +13,78 @@ async function getSearchResults(searchQuery: string) {
   }
 
   try {
-    // Use the new search API endpoint
-    // For server components, construct the full URL
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const host = process.env.VERCEL_URL || process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, '') || 'localhost:3000';
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`;
-    
-    const response = await fetch(`${baseUrl}/api/search?query=${encodeURIComponent(searchQuery.trim())}`, {
-      cache: 'no-store', // Ensure fresh results
-    });
+    await connectDB();
 
-    if (!response.ok) {
-      throw new Error(`Search API error: ${response.status}`);
-    }
+    const query = searchQuery.trim();
 
-    const data = await response.json();
+    try {
+      // Try Atlas Search first
+      const search = await Part.aggregate([
+        {
+          $search: {
+            index: "parts_search",
+            compound: {
+              should: [
+                {
+                  autocomplete: {
+                    query,
+                    path: "siyam_ref",
+                  },
+                },
+                {
+                  autocomplete: {
+                    query,
+                    path: "model",
+                  },
+                },
+                {
+                  autocomplete: {
+                    query,
+                    path: "oem",
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ]);
 
-    if (data.success) {
       return {
-        products: data.results as (IPart & { _id: string })[],
-        count: data.count || 0,
+        products: search.map((result) => ({
+          ...result,
+          _id: result._id?.toString(),
+        })) as (IPart & { _id: string })[],
+        count: search.length,
       };
-    } else {
-      throw new Error(data.error || 'Search failed');
+    } catch (searchError: unknown) {
+      // If Atlas Search fails, fall back to regular text search
+      const errorMessage =
+        searchError instanceof Error
+          ? searchError.message
+          : String(searchError);
+      console.error(
+        "Atlas Search error, falling back to regex search:",
+        errorMessage
+      );
+
+      const searchRegex = new RegExp(query, "i");
+      const fallbackResults = await Part.find({
+        $or: [
+          { siyam_ref: { $regex: searchRegex } },
+          { model: { $regex: searchRegex } },
+          { oem: { $in: [searchRegex] } },
+        ],
+      })
+        .limit(50)
+        .lean() as (IPart & { _id: any; __v?: number })[];
+
+      return {
+        products: fallbackResults.map((result) => ({
+          ...result,
+          _id: result._id?.toString(),
+        })) as (IPart & { _id: string })[],
+        count: fallbackResults.length,
+      };
     }
   } catch (error) {
     console.error("Error fetching search results:", error);
