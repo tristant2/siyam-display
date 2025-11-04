@@ -14,7 +14,7 @@ const ContactSchema = new Schema<IContact>(
   {
     name: {
       type: String,
-      required: true,
+      required: false,
     },
     company: {
       type: String,
@@ -22,7 +22,7 @@ const ContactSchema = new Schema<IContact>(
     },
     email: {
       type: String,
-      required: true,
+      required: false,
     },
     phone: {
       type: String,
@@ -34,10 +34,9 @@ const ContactSchema = new Schema<IContact>(
     },
   },
   {
-    timestamps: true,
+    timestamps: false,
   }
 );
 
 export const Contact =
   mongoose.models.Contact || model<IContact>("Contact", ContactSchema);
-

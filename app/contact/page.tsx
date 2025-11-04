@@ -25,9 +25,7 @@ export default function ContactPage() {
     null
   );
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -225,7 +223,6 @@ export default function ContactPage() {
                                 type="text"
                                 name="name"
                                 id="name"
-                                required
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
@@ -252,7 +249,6 @@ export default function ContactPage() {
                                 type="email"
                                 name="email"
                                 id="email"
-                                required
                                 value={formData.email}
                                 onChange={handleInputChange}
                                 className="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"

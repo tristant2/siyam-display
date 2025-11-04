@@ -6,33 +6,28 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const body = await request.json();
-    const { name, company, email, phone, siyam_ref } = body;
-
-    // Validate required fields
-    if (!name || !email) {
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
       return NextResponse.json(
-        { success: false, error: "Name and email are required" },
+        {
+          success: false,
+          error: "Invalid request body. Please provide valid JSON data.",
+        },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+    const { name, company, email, phone, siyam_ref } = body || {};
 
-    // Create new contact
+    // Create new contact - trim values and handle optional fields
     const contact = new Contact({
-      name,
-      company: company || undefined,
-      email,
-      phone: phone || undefined,
-      siyam_ref: siyam_ref || undefined,
+      name: name.trim() || "",
+      company: company?.trim() || undefined,
+      email: email.trim() || "",
+      phone: phone?.trim() || undefined,
+      siyam_ref: siyam_ref?.trim() || undefined,
     });
 
     await contact.save();
