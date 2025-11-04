@@ -6,7 +6,7 @@ const categories = [
     name: "PTR",
     href: "/category/ptr",
     description: "Browse PTR products",
-    image: "/ptr.png",
+    image: "/ptr.jpeg",
   },
   {
     name: "BT",
@@ -18,7 +18,7 @@ const categories = [
     name: "CAC",
     href: "/category/cac",
     description: "Browse CAC products",
-    image: "/cac.png",
+    image: "/cac.jpeg",
   },
   {
     name: "Automotive CB",
@@ -30,7 +30,7 @@ const categories = [
     name: "Automotive PA",
     href: "/category/automotive_pa",
     description: "Browse Automotive PA products",
-    image: "/automtivepa.jpg",
+    image: "/automotivepa.jpg",
   },
 ];
 
